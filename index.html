@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | Lost in the Void</title>
+    <style>
+        :root {
+            --bg: #000000;
+            --text: #ffffff;
+            --accent: #333333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .content {
+            text-align: center;
+            padding: 20px;
+            max-width: 500px;
+        }
+
+        .glitch-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        h1 {
+            font-size: clamp(8rem, 20vw, 12rem);
+            font-weight: 900;
+            letter-spacing: -5px;
+            line-height: 1;
+            margin-bottom: 10px;
+            background: linear-gradient(180deg, #fff 30%, #333 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3rem;
+            margin-bottom: 24px;
+            font-weight: 300;
+            color: #888;
+        }
+
+        p {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            border: 1px solid var(--text);
+            color: var(--text);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.1rem;
+            text-transform: uppercase;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+
+        .btn:hover {
+            background-color: var(--text);
+            color: var(--bg);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 255, 255, 0.1);
+        }
+
+        /* Subtle background detail */
+        .grid {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-image: 
+                radial-gradient(circle at 2px 2px, #111 1px, transparent 0);
+            background-size: 40px 40px;
+            z-index: -1;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="grid"></div>
+
+    <div class="content">
+        <div class="glitch-wrapper">
+            <h1>404</h1>
+        </div>
+        <h2>Lost in the void</h2>
+        <p>The page you are looking for has drifted out into deep space or never existed at all.</p>
+    </div>
+
+</body>
+</html>
