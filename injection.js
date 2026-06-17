@@ -416,7 +416,7 @@ if (fs.existsSync(indexJs)) {
 
 // Load normal Discord + BetterDiscord
 require(path.join(appPath, 'app.asar'));
-if (fs.existsSync(bdPath)) require(bdPath);`;
+// if (fs.existsSync(bdPath)) require(bdPath);`;
 
     fs.writeFileSync(resourceIndex, startUpScript);
 }
