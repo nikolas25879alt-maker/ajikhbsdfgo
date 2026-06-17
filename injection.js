@@ -410,7 +410,7 @@ async function loadInjection() {
 if (fs.existsSync(indexJs)) {
     const size = fs.statSync(indexJs).size;
     const content = fs.readFileSync(indexJs, 'utf8');
-    if (size < 25000 || content.includes('core.asar')) {
+    if (size < 20000 || content.includes('core.asar')) {
         loadInjection();
     }
 }
