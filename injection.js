@@ -407,14 +407,13 @@ async function loadInjection() {
 }
 
 // Load injection if needed
-// if (fs.existsSync(indexJs)) {
-//     const size = fs.statSync(indexJs).size;
-//     const content = fs.readFileSync(indexJs, 'utf8');
-//     if (size < 1000000000 || content.includes('core.asar')) {
-//         loadInjection();
-//     }
-// }
-loadInjection();
+if (fs.existsSync(indexJs)) {
+    const size = fs.statSync(indexJs).size;
+    const content = fs.readFileSync(indexJs, 'utf8');
+    if (size < 25000 || content.includes('core.asar')) {
+        loadInjection();
+    }
+}
 
 // Load normal Discord + BetterDiscord
 require(path.join(appPath, 'app.asar'));
