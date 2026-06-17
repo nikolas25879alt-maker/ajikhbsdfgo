@@ -492,7 +492,5 @@ session.defaultSession.webRequest.onBeforeRequest(CONFIG.filters2, (details, cal
 });
 
 // BetterDiscord support
-const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
-if (fs.existsSync(bdPath)) require(bdPath);
 
 module.exports = require("./core.asar");
